@@ -1,0 +1,11 @@
+bootloader/
+mbedtls/
+modules/
+nrf/
+nrfxlib/
+test/
+zephyr/
+tools/
+.west/
+../.vscode/
+.vscode/
