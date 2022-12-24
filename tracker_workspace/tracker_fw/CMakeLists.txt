@@ -11,7 +11,9 @@ project(gnss_sample)
 
 zephyr_library_sources(src/main.c)
 
-zephyr_library_sources_ifdef(CONFIG_GNSS_SAMPLE_ASSISTANCE_NRF_CLOUD src/assistance.c)
-zephyr_library_sources_ifdef(CONFIG_GNSS_SAMPLE_ASSISTANCE_SUPL src/assistance_supl.c)
-zephyr_library_sources_ifdef(CONFIG_GNSS_SAMPLE_ASSISTANCE_MINIMAL src/assistance_minimal.c)
-zephyr_library_sources_ifdef(CONFIG_GNSS_SAMPLE_ASSISTANCE_MINIMAL src/mcc_location_table.c)
+add_subdirectory(src/gnss_assistance)
+add_subdirectory(src/gnss)
+add_subdirectory(src/modem)
+add_subdirectory(src/general_lib)
+add_subdirectory(src/AWS)
+add_subdirectory(src/json)
