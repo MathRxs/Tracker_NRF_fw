@@ -3,14 +3,26 @@
 LOG_MODULE_REGISTER(gnss, CONFIG_GNSS_SAMPLE_LOG_LEVEL);
 
 
-K_THREAD_DEFINE(gnss_thread, GNSS_THREAD_STACK_SIZE, gnss_thread_fn, NULL, NULL, NULL,
-        0, 0, 1000);
+// K_THREAD_DEFINE(gnss_thread, GNSS_THREAD_STACK_SIZE, gnss_thread_fn, NULL, NULL, NULL,
+//         5, 0, 1000);
 struct nrf_modem_gnss_pvt_data_frame last_pvt;
 #if !defined(CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE) || defined(CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST)
 static struct k_work_q gnss_work_q;
 
+K_MSGQ_DEFINE(nmea_queue, sizeof(struct nrf_modem_gnss_nmea_data_frame *), 10, 4);
+static K_SEM_DEFINE(pvt_data_sem, 0, 1);
+static struct k_poll_event events[2] = {
+	K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_SEM_AVAILABLE,
+					K_POLL_MODE_NOTIFY_ONLY,
+					&pvt_data_sem, 0),
+	K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
+					K_POLL_MODE_NOTIFY_ONLY,
+					&nmea_queue, 0),
+};
+
 #define GNSS_WORKQ_THREAD_STACK_SIZE 2304
 #define GNSS_WORKQ_THREAD_PRIORITY   5
+K_SEM_DEFINE(gnss_available, 0, 1);
 
 K_THREAD_STACK_DEFINE(gnss_workq_stack_area, GNSS_WORKQ_THREAD_STACK_SIZE);
 #endif /* !CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE || CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST */
@@ -85,11 +97,7 @@ int gnss_init_and_start(void)
 	if (nrf_modem_gnss_use_case_set(use_case) != 0) {
 		LOG_WRN("Failed to set GNSS use case");
 	}
-	// int err = nrf_modem_at_cmd("AT%XMAGPIO=1,0,0,1,1,1574,1577", NULL, 0, NULL);
-	// if (err) {
-	// 	LOG_ERR("Failed to configure MAGPIO, error: %d", err);
-	// 	return -1;
-	// }
+
 #if defined(CONFIG_NRF_CLOUD_AGPS_ELEVATION_MASK)
 	if (nrf_modem_gnss_elevation_threshold_set(CONFIG_NRF_CLOUD_AGPS_ELEVATION_MASK) != 0) {
 		LOG_ERR("Failed to set elevation threshold");
@@ -211,6 +219,7 @@ static void gnss_event_handler(int event)
 
 static void gnss_thread_fn(void *arg1, void *arg2, void *arg3)
 {
+	printf("Starting GNSS thread");
 	int err;
     uint8_t cnt = 0;
 	struct nrf_modem_gnss_nmea_data_frame *nmea_data;
@@ -258,7 +267,7 @@ static void gnss_thread_fn(void *arg1, void *arg2, void *arg3)
 				/* NMEA-only output mode. */
 
 				if (output_paused()) {
-					goto handle_nmea;
+					// goto handle_nmea;
 				}
 
 				if (last_pvt.flags & NRF_MODEM_GNSS_PVT_FLAG_FIX_VALID) {
@@ -268,7 +277,7 @@ static void gnss_thread_fn(void *arg1, void *arg2, void *arg3)
 				/* PVT and NMEA output mode. */
 
 				if (output_paused()) {
-					goto handle_nmea;
+					// goto handle_nmea;
 				}
 				print_satellite_stats(&last_pvt);
 
@@ -288,22 +297,29 @@ static void gnss_thread_fn(void *arg1, void *arg2, void *arg3)
 					fix_timestamp = k_uptime_get();
 					print_fix_data(&last_pvt);
 					print_distance_from_reference(&last_pvt);
+					if(cnt >= 5){
+						cnt = 0;
+						k_sem_give(&gnss_available);
+					} else{
+						cnt++;
+					}
+					
 				} 
 
 				printf("\nNMEA strings:\n\n");
 			}
 		}
 
-handle_nmea:
-		if (events[1].state == K_POLL_STATE_MSGQ_DATA_AVAILABLE &&
-		    k_msgq_get(events[1].msgq, &nmea_data, K_NO_WAIT) == 0) {
-			/* New NMEA data available */
+// handle_nmea:
+// 		if (events[1].state == K_POLL_STATE_MSGQ_DATA_AVAILABLE &&
+// 		    k_msgq_get(events[1].msgq, &nmea_data, K_NO_WAIT) == 0) {
+// 			/* New NMEA data available */
 
-			if (!output_paused()) {
-				printf("%s", nmea_data->nmea_str);
-			}
-			k_free(nmea_data);
-		}
+// 			if (!output_paused()) {
+// 				printf("%s", nmea_data->nmea_str);
+// 			}
+// 			k_free(nmea_data);
+// 		}
 
 		events[0].state = K_POLL_STATE_NOT_READY;
 		events[1].state = K_POLL_STATE_NOT_READY;

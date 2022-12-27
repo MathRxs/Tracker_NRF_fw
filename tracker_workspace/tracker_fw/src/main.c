@@ -26,16 +26,5 @@ BUILD_ASSERT((sizeof(CONFIG_GNSS_SAMPLE_REFERENCE_LATITUDE) == 1 &&
 
 int main(void)
 {
-	
-	LOG_INF("Starting GNSS sample");
-	if (modem_init() != 0) {
-		LOG_ERR("Failed to initialize modem");
-		return -1;
-	}
-	
-
-
-
-
 	return 0;
 }

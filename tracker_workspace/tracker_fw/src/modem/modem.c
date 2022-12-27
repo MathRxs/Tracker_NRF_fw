@@ -1,9 +1,10 @@
 #include "modem.h"
 
 static void date_time_evt_handler(const struct date_time_evt *evt);
-K_SEM_DEFINE(lte_connected, 0, 2);
+K_SEM_DEFINE(lte_connected, 0, 3);
 LOG_MODULE_REGISTER(modem, CONFIG_GNSS_SAMPLE_LOG_LEVEL);
-
+K_THREAD_DEFINE(modem_thread, 0x1000, modem_thread_fn, NULL, NULL, NULL,
+		6, 0, 0);
 
 int modem_init(void)
 {
@@ -67,6 +68,7 @@ static void lte_handler(const struct lte_lc_evt *const evt)
 			"Connected - home network" : "Connected - roaming\n");
 		k_sem_give(&lte_connected);
 		k_sem_give(&lte_connected);
+		k_sem_give(&lte_connected);
 		break;
 	case LTE_LC_EVT_PSM_UPDATE:
 		printk("PSM parameter update: TAU: %d, Active time: %d\n",
@@ -96,4 +98,20 @@ static void lte_handler(const struct lte_lc_evt *const evt)
 	default:
 		break;
 	}
+}
+
+static void modem_thread_fn(void)
+{
+	int err;
+
+	LOG_INF("Initializing modem");
+
+	err = modem_init();
+	if (err) {
+		LOG_ERR("Failed to initialize modem, error: %d", err);
+		return;
+	}
+
+	LOG_INF("Modem initialized");
+	k_sleep(K_FOREVER);
 }

@@ -6,22 +6,17 @@
 #include "modem.h"
 // Variables
 extern struct nrf_modem_gnss_pvt_data_frame last_pvt;
-
+extern struct k_sem gnss_available; 
 // Constants
 #define GNSS_THREAD_STACK_SIZE 2048
 #define PI 3.14159265358979323846
 #define EARTH_RADIUS_METERS (6371.0 * 1000.0)
 
-K_MSGQ_DEFINE(nmea_queue, sizeof(struct nrf_modem_gnss_nmea_data_frame *), 10, 4);
-static K_SEM_DEFINE(pvt_data_sem, 0, 1);
-static struct k_poll_event events[2] = {
-	K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_SEM_AVAILABLE,
-					K_POLL_MODE_NOTIFY_ONLY,
-					&pvt_data_sem, 0),
-	K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
-					K_POLL_MODE_NOTIFY_ONLY,
-					&nmea_queue, 0),
-};
+
+
+
+
+
 // Prototypes
 int gnss_init_and_start(void);
 int gnss_init_and_start(void);

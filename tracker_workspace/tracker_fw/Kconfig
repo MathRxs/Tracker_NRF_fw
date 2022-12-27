@@ -165,6 +165,21 @@ config GNSS_SAMPLE_ASSISTANCE_REFERENCE_ALT
 	  The default value -32767 implies that reference altitude is not injected.
 
 endif # GNSS_SAMPLE_ASSISTANCE_MINIMAL && GNSS_SAMPLE_LOW_ACCURACY
+menu "AWS IoT Sample Settings"
+
+config APP_VERSION
+	string "Application version"
+	default "v1.0.0"
+
+config PUBLICATION_INTERVAL_SECONDS
+	int "Interval in seconds that the sample will publish data"
+	default 60
+
+config CONNECTION_RETRY_TIMEOUT_SECONDS
+	int "Number of seconds between each AWS IoT connection retry"
+	default 30
+
+endmenu
 
 menu "Zephyr Kernel"
 source "Kconfig.zephyr"

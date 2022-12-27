@@ -9,7 +9,7 @@
  * 
  * @return The return value is the number of bytes written, which is the size of the buffer.
  */
-static int json_add_obj(cJSON *parent, const char *str, cJSON *item)
+int json_add_obj(cJSON *parent, const char *str, cJSON *item)
 {
 	cJSON_AddItemToObject(parent, str, item);
 
@@ -23,7 +23,7 @@ static int json_add_obj(cJSON *parent, const char *str, cJSON *item)
  * @param str The name of the item to add to the parent object.
  * @param item The name of the item to add to the parent object.
  */
-static int json_add_str(cJSON *parent, const char *str, const char *item)
+int json_add_str(cJSON *parent, const char *str, const char *item)
 {
 	cJSON *json_str;
 
@@ -42,7 +42,7 @@ static int json_add_str(cJSON *parent, const char *str, const char *item)
  * @param str The name of the object.
  * @param item The item to add to the JSON object.
  */
-static int json_add_number(cJSON *parent, const char *str, double item)
+int json_add_number(cJSON *parent, const char *str, double item)
 {
 	cJSON *json_num;
 
