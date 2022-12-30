@@ -26,5 +26,7 @@ BUILD_ASSERT((sizeof(CONFIG_GNSS_SAMPLE_REFERENCE_LATITUDE) == 1 &&
 
 int main(void)
 {
+	printf("Starting GNSS sample\n");
+	k_sleep(K_FOREVER);
 	return 0;
 }
