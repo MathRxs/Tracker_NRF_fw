@@ -8,8 +8,8 @@ static struct k_work shadow_update_version_work;
 static uint8_t cloud_connected = 0;
 
 static K_SEM_DEFINE(date_time_obtained, 0, 1);
-// K_THREAD_DEFINE(aws_thread, 0x2000, aws_cloud_thread_fn, NULL, NULL, NULL,
-//         4, 0, 1000);
+K_THREAD_DEFINE(aws_thread, 0x2000, aws_cloud_thread_fn, NULL, NULL, NULL,
+        4, 0, 1000);
 
 static int shadow_update(bool version_number_include)
 {

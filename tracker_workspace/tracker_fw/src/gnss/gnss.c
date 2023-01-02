@@ -2,9 +2,10 @@
 
 LOG_MODULE_REGISTER(gnss, CONFIG_GNSS_SAMPLE_LOG_LEVEL);
 
-
-// K_THREAD_DEFINE(gnss_thread, GNSS_THREAD_STACK_SIZE, gnss_thread_fn, NULL, NULL, NULL,
-//         5, 0, 1000);
+extern uint8_t waked_up;
+extern struct k_sem motion_detect;
+K_THREAD_DEFINE(gnss_thread, GNSS_THREAD_STACK_SIZE, gnss_thread_fn, NULL, NULL, NULL,
+        5, 0, 1000);
 struct nrf_modem_gnss_pvt_data_frame last_pvt;
 #if !defined(CONFIG_GNSS_SAMPLE_ASSISTANCE_NONE) || defined(CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST)
 static struct k_work_q gnss_work_q;
@@ -250,64 +251,71 @@ static void gnss_thread_fn(void *arg1, void *arg2, void *arg3)
     fix_timestamp = k_uptime_get();
     
 	while (true) {
-		(void)k_poll(events, 2, K_FOREVER);
+		if(waked_up){
+			(void)k_poll(events, 2, K_FOREVER);
 
-		if (events[0].state == K_POLL_STATE_SEM_AVAILABLE &&
-		    k_sem_take(events[0].sem, K_NO_WAIT) == 0) {
-			/* New PVT data available */
+			if (events[0].state == K_POLL_STATE_SEM_AVAILABLE &&
+				k_sem_take(events[0].sem, K_NO_WAIT) == 0) {
+				/* New PVT data available */
 
-			if (IS_ENABLED(CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST)) {
-				/* TTFF test mode. */
+				if (IS_ENABLED(CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST)) {
+					/* TTFF test mode. */
 
-				/* Calculate the time GNSS has been blocked by LTE. */
-				if (last_pvt.flags & NRF_MODEM_GNSS_PVT_FLAG_DEADLINE_MISSED) {
-					time_blocked++;
-				}
-			} else if (IS_ENABLED(CONFIG_GNSS_SAMPLE_NMEA_ONLY)) {
-				/* NMEA-only output mode. */
-
-				if (output_paused()) {
-					// goto handle_nmea;
-				}
-
-				if (last_pvt.flags & NRF_MODEM_GNSS_PVT_FLAG_FIX_VALID) {
-					print_distance_from_reference(&last_pvt);
-				}
-			} else {
-				/* PVT and NMEA output mode. */
-
-				if (output_paused()) {
-					// goto handle_nmea;
-				}
-				print_satellite_stats(&last_pvt);
-
-				if (last_pvt.flags & NRF_MODEM_GNSS_PVT_FLAG_DEADLINE_MISSED) {
-					printf("GNSS operation blocked by LTE\n");
-				}
-				if (last_pvt.flags &
-				    NRF_MODEM_GNSS_PVT_FLAG_NOT_ENOUGH_WINDOW_TIME) {
-					printf("Insufficient GNSS time windows\n");
-				}
-				if (last_pvt.flags & NRF_MODEM_GNSS_PVT_FLAG_SLEEP_BETWEEN_PVT) {
-					printf("Sleep period(s) between PVT notifications\n");
-				}
-				printf("-----------------------------------\n");
-
-				if (last_pvt.flags & NRF_MODEM_GNSS_PVT_FLAG_FIX_VALID) {
-					fix_timestamp = k_uptime_get();
-					print_fix_data(&last_pvt);
-					print_distance_from_reference(&last_pvt);
-					if(cnt >= 5){
-						cnt = 0;
-						k_sem_give(&gnss_available);
-					} else{
-						cnt++;
+					/* Calculate the time GNSS has been blocked by LTE. */
+					if (last_pvt.flags & NRF_MODEM_GNSS_PVT_FLAG_DEADLINE_MISSED) {
+						time_blocked++;
 					}
-					
-				} 
+				} else if (IS_ENABLED(CONFIG_GNSS_SAMPLE_NMEA_ONLY)) {
+					/* NMEA-only output mode. */
 
-				printf("\nNMEA strings:\n\n");
+					if (output_paused()) {
+						// goto handle_nmea;
+					}
+
+					if (last_pvt.flags & NRF_MODEM_GNSS_PVT_FLAG_FIX_VALID) {
+						print_distance_from_reference(&last_pvt);
+					}
+				} else {
+					/* PVT and NMEA output mode. */
+
+					if (output_paused()) {
+						// goto handle_nmea;
+					}
+					print_satellite_stats(&last_pvt);
+
+					if (last_pvt.flags & NRF_MODEM_GNSS_PVT_FLAG_DEADLINE_MISSED) {
+						printf("GNSS operation blocked by LTE\n");
+					}
+					if (last_pvt.flags &
+						NRF_MODEM_GNSS_PVT_FLAG_NOT_ENOUGH_WINDOW_TIME) {
+						printf("Insufficient GNSS time windows\n");
+					}
+					if (last_pvt.flags & NRF_MODEM_GNSS_PVT_FLAG_SLEEP_BETWEEN_PVT) {
+						printf("Sleep period(s) between PVT notifications\n");
+					}
+					printf("-----------------------------------\n");
+
+					if (last_pvt.flags & NRF_MODEM_GNSS_PVT_FLAG_FIX_VALID) {
+						fix_timestamp = k_uptime_get();
+						print_fix_data(&last_pvt);
+						print_distance_from_reference(&last_pvt);
+						if(cnt >= 5){
+							cnt = 0;
+							k_sem_give(&gnss_available);
+							k_sleep(K_SECONDS(4));
+						} else{
+							cnt++;
+						}
+						
+					} 
+
+
+				}
 			}
+		}else{
+				nrf_modem_gnss_stop();
+				k_sem_take(&motion_detect, K_FOREVER);
+				nrf_modem_gnss_start();
 		}
 
 // handle_nmea:

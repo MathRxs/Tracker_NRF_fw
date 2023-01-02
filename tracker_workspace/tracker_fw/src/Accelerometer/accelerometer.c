@@ -2,7 +2,8 @@
 const struct device *accel;
 LOG_MODULE_REGISTER(accelerometer, LOG_LEVEL_INF);
 K_THREAD_DEFINE(accelerometer_init_thread_id, 2048, accelerometer_init_thread, NULL, NULL, NULL, 0, 0, 0);
-K_SEM_DEFINE(accelerometer_data_ready, 0, 1);
+K_SEM_DEFINE(motion_detect, 0, 1);
+
 uint16_t counter = 0;
 #define ACCEL_NODE DT_ALIAS(accel0)
 bool init_accelerometer(void)
@@ -39,7 +40,17 @@ void accelerometer_trigger_handler(const struct device *dev, const struct sensor
 	printk("\nTriggered %d\n", counter++);
 	printk("%d\n", trig->type);
 
-	k_sem_give(&accelerometer_data_ready);
+	if(waked_up){
+		timer_restart(TIMER_TIMEOUT_SEC);
+	}
+	else {
+		waked_up = 1;
+		k_sem_give(&motion_detect);
+		timer_start(TIMER_TIMEOUT_SEC);
+	}
+
+
+
 	
 }
 void enable_and_set_interrupt(void)
@@ -77,21 +88,7 @@ void accelerometer_init_thread(void)
 	}
 	
 	enable_and_set_interrupt();
-	while (1) {
-		
 
-		double x_accel = 0;
-		double y_accel = 0;
-		double z_accel = 0;
-		get_accelerometer_data(&x_accel, &y_accel, &z_accel);
-
-		// printk("Acceleration values:\n");
-		// printk("-------------------------------------------------------------------------------\n");
-		// printk("X: %lf (m/s^2), Y: %lf (m/s^2), Z: %lf (m/s^2)\n", x_accel, y_accel, z_accel);
-		// printk("-------------------------------------------------------------------------------\n");
-
-		k_sem_take(&accelerometer_data_ready, K_FOREVER);
-	}
 	k_sleep(K_FOREVER);
 }
 

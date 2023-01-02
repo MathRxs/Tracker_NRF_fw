@@ -4,8 +4,10 @@
 
 #include <zephyr/drivers/sensor.h>
 #include "general_include.h"
+#include "timer.h"
+
 #define ACCEL_NODE DT_ALIAS(accel0)
-extern struct k_sem accelerometer_data_ready;
+
 
 bool init_accelerometer(void);
 void get_accelerometer_data(double *x_accel, double *y_accel, double *z_accel);
