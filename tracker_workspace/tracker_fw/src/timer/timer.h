@@ -5,7 +5,7 @@
 extern uint8_t waked_up;
 // Variables
 // Constants
-#define TIMER_TIMEOUT_SEC 10*60 // 10 minutes
+#define TIMER_TIMEOUT_SEC 10 // 10 minutes
 // Prototypes
 void timer_init(void);
 void timer_start(uint16_t timeout_sec);

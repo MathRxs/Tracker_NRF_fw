@@ -5,9 +5,55 @@ K_SEM_DEFINE(lte_connected, 0, 3);
 LOG_MODULE_REGISTER(modem, CONFIG_GNSS_SAMPLE_LOG_LEVEL);
 K_THREAD_DEFINE(modem_thread, 0x1000, modem_thread_fn, NULL, NULL, NULL,
 		6, 0, 0);
+static bool private_checkCertificateProvisioned(void)
+{
+    int err;
+    /*
+     * Key management
+     */
+    nrf_sec_tag_t tag = CONFIG_AWS_IOT_SEC_TAG;
+    bool existsPubCert = false;
+    bool existsPrivCert = false;
+    bool existsCA = false;
+    err = modem_key_mgmt_exists(tag, MODEM_KEY_MGMT_CRED_TYPE_PUBLIC_CERT, &existsPubCert);
+    err = modem_key_mgmt_exists(tag, MODEM_KEY_MGMT_CRED_TYPE_PRIVATE_CERT, &existsPrivCert);
+    err = modem_key_mgmt_exists(tag, MODEM_KEY_MGMT_CRED_TYPE_CA_CHAIN, &existsCA);
+    if(err)
+    {
+        LOG_ERR("Could not interact with secure key unit.");
+        return(false);
+    }
+    else
+    {
+        if(false == existsPubCert)
+        {
+            LOG_WRN("It seems no (public) certificate is provisioned.");
+        }
+        if(false == existsPrivCert)
+        {
+            LOG_WRN("It seems no (private) certificate is provisioned.");
+        }
+        if(false == existsCA)
+        {
+            LOG_WRN("It seems no certificate authority is provisioned.");
+        }
+
+        if((existsPubCert == true) && (existsPrivCert == true) && (existsCA == true))
+        {
+            return(true);
+        }
+        {
+            return(false);
+        }
+    }
+}
 
 int modem_init(void)
 {
+	while(!private_checkCertificateProvisioned()){
+		LOG_INF("Waiting for certificates to be provisioned");
+		k_sleep(K_SECONDS(1));
+	}
 	if (IS_ENABLED(CONFIG_DATE_TIME)) {
 		date_time_register_handler(date_time_evt_handler);
 	}

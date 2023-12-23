@@ -1,16 +1,23 @@
 #include "cloud.h"
 
 LOG_MODULE_REGISTER(aws, CONFIG_GNSS_SAMPLE_LOG_LEVEL);
+#define ADC_NODE        DT_NODELABEL(adc)
 static struct k_work_delayable shadow_update_work;
 static struct k_work_delayable connect_work;
 static struct k_work shadow_update_version_work;
 
 static uint8_t cloud_connected = 0;
-
+static const struct device *adc_dev;
+adc_dev = DEVICE_DT_GET(ADC_NODE);
 static K_SEM_DEFINE(date_time_obtained, 0, 1);
 K_THREAD_DEFINE(aws_thread, 0x2000, aws_cloud_thread_fn, NULL, NULL, NULL,
         4, 0, 1000);
+static int get_battery_voltage(void)
+{
+	int err;
+	int16_t bat_voltage = 0;
 
+}
 static int shadow_update(bool version_number_include)
 {
 	int err;
@@ -368,7 +375,13 @@ char* gnss_data_to_json_str(struct nrf_modem_gnss_pvt_data_frame data){
 
 }
 
-
+void send_vibration_detect(){
+	char imei[20];
+	get_imei(imei);
+	char topic[75];
+	sprintf(topic,"/vibration/%s",imei);
+	publish(topic, "vibration detected");
+}
 static void aws_cloud_thread_fn(void *arg1, void *arg2, void *arg3)
 {
     int err;
@@ -396,7 +409,7 @@ static void aws_cloud_thread_fn(void *arg1, void *arg2, void *arg3)
 		k_sem_take(&gnss_available, K_FOREVER);
 		char *message = gnss_data_to_json_str(last_pvt);
 		char topic[75];
-		sprintf(topic,"%s/gnss_data",imei);
+		sprintf(topic,"/location/%s",imei);
 		publish(topic, message);
 		free(message);
 

@@ -27,5 +27,5 @@ static int app_topics_subscribe(void);
 static void get_imei(char* imei);
 void publish(char *topic, char *payload);
 static void aws_cloud_thread_fn(void *arg1, void *arg2, void *arg3);
-
+void send_vibration_detect();
 #endif // CLOUD_H

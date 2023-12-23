@@ -2,7 +2,10 @@
 #define MODEM_H_
 
 // Includes
+#include <modem/modem_key_mgmt.h>
+#include <modem/nrf_modem_lib.h>
 #include "general_include.h"
+
 
 // Variables
 extern struct k_sem lte_connected; 

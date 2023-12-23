@@ -46,7 +46,6 @@ static struct k_work ttff_test_start_work;
 static uint32_t time_to_fix;
 #endif
 
-static const char update_indicator[] = {'\\', '|', '/', '-'};
 
 
 static uint64_t fix_timestamp;

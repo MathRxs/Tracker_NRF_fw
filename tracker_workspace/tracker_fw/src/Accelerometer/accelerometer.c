@@ -44,14 +44,13 @@ void accelerometer_trigger_handler(const struct device *dev, const struct sensor
 		timer_restart(TIMER_TIMEOUT_SEC);
 	}
 	else {
+		send_vibration_detect();
 		waked_up = 1;
 		k_sem_give(&motion_detect);
 		timer_start(TIMER_TIMEOUT_SEC);
 	}
-
-
-
 	
+
 }
 void enable_and_set_interrupt(void)
 {
