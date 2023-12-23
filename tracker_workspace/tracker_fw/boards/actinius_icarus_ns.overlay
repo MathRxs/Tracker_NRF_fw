@@ -1,0 +1,3 @@
+&charger_enable {
+    charger = "auto";
+};

@@ -27,8 +27,10 @@ BUILD_ASSERT((sizeof(CONFIG_GNSS_SAMPLE_REFERENCE_LATITUDE) == 1 &&
 
 int main(void)
 {
+
 	timer_init();
-	printf("Starting GNSS sample\n");
+	printf("Starting moto tracker\n");
+	init_adc();
 	k_sleep(K_FOREVER);
 	return 0;
 }
